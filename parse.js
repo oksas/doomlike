@@ -24,7 +24,9 @@ const parsePage = (url) => {
 
         const $posts = [...document.querySelectorAll('.cPost')];
         const postsResults = $posts.map($post => parsePost($post))
-            .filter(postData => !!postData)
+            .filter(postData => {
+                return !!postData && postData.likes > 0
+            })
             .reduce((allTotals, { author, likes }) => {
                 allTotals[author] = allTotals[author] || 0;
                 allTotals[author] += likes;
@@ -48,8 +50,6 @@ const parseThread = (threadUrl, startPage = 1, endPage = 1) => {
 
     console.log(`parseThread: all urls are ${allPageUrls}`);
 
-    // starts obj to keep track of users to likes mapping
-    // for every page, parse it
     const allPageResults = allPageUrls.map(url => parsePage(url));
     
     return Promise.all(allPageResults).then(allPageResults => {
