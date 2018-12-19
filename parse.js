@@ -36,24 +36,31 @@ const parsePage = (url) => {
     });
 };
 
-const parseThread = (firstPageUrl, pageCount = 1) => {
-    console.log(`parseThread: attempting to parse thread ${firstPageUrl} with ${pageCount} pages`);
+const parseThread = (threadUrl, startPage = 1, endPage = 1) => {
+    console.log(`parseThread: attempting to parse thread ${threadUrl} from page ${startPage} to ${endPage}`);
+
+    const allPageUrls = [];
+    const pageSuffix = '?page=';
+
+    for (let i = startPage; i <= endPage; i++) {
+        allPageUrls.push(threadUrl + pageSuffix + i);
+    }
+
+    console.log(`parseThread: all urls are ${allPageUrls}`);
 
     // starts obj to keep track of users to likes mapping
     // for every page, parse it
+    const allPageResults = allPageUrls.map(url => parsePage(url));
     
-    return new Promise((resolve, reject) => {
-        // in the future this should maybe return some metadata about the work that was done
-        // for example, it should say if it was successful, how many pages it went through, what the urls were for each page, etc.
-        parsePage(firstPageUrl)
-        .then((results) => {
-
-            resolve(results);
-        });
-        // reduce all the results from each page and tally up everything in memory
-        // return a promise
+    return Promise.all(allPageResults).then(allPageResults => {
+        return allPageResults.reduce((allTotals, pageResults) => {
+            for (let author in pageResults) {
+                allTotals[author] = allTotals[author] || 0;
+                allTotals[author] += pageResults[author];
+            }
+            return allTotals;
+        }, {});
     });
-      
 };
 
 module.exports = { parsePost, parsePage, parseThread };
