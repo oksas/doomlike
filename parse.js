@@ -38,6 +38,7 @@ const parsePage = (url, delay) => {
                     }, {});
 
                 console.log(`parsePage: parsed page with the following results: ${JSON.stringify(postsResults)}`);
+                resolve(postsResults);
                 return postsResults;
             });
         }, delay);
@@ -56,7 +57,7 @@ const parseThread = (threadUrl, startPage = 1, endPage = 1, delay = 1000 * 10) =
 
     console.log(`parseThread: all urls are ${allPageUrls}`);
 
-    const allPageResults = allPageUrls.map(url => parsePage(url, delay));
+    const allPageResults = allPageUrls.map((url, i) => parsePage(url, delay * i));
     
     return Promise.all(allPageResults).then(allPageResults => {
         return allPageResults.reduce((allTotals, pageResults) => {
