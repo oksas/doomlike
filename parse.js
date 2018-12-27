@@ -17,28 +17,34 @@ const parsePost = ($post) => {
     return { author, likes };
 };
 
-const parsePage = (url) => {
-    return request(url)
-    .then(body => {
-        const { document } = (new JSDOM(body)).window;
+const parsePage = (url, delay) => {
+    return new Promise((resolve, reject) => {
+        console.log(`parsePage: waiting ${delay / 1000} seconds to make request...`);
+        setTimeout(() => {
+            console.log(`parsePage: making request...`);
+            return request(url)
+            .then(body => {
+                const { document } = (new JSDOM(body)).window;
 
-        const $posts = [...document.querySelectorAll('.cPost')];
-        const postsResults = $posts.map($post => parsePost($post))
-            .filter(postData => {
-                return !!postData && postData.likes > 0
-            })
-            .reduce((allTotals, { author, likes }) => {
-                allTotals[author] = allTotals[author] || 0;
-                allTotals[author] += likes;
-                return allTotals;
-            }, {});
+                const $posts = [...document.querySelectorAll('.cPost')];
+                const postsResults = $posts.map($post => parsePost($post))
+                    .filter(postData => {
+                        return !!postData && postData.likes > 0
+                    })
+                    .reduce((allTotals, { author, likes }) => {
+                        allTotals[author] = allTotals[author] || 0;
+                        allTotals[author] += likes;
+                        return allTotals;
+                    }, {});
 
-        console.log(`parsePage: parsed page with the following results: ${JSON.stringify(postsResults)}`);
-        return postsResults;
+                console.log(`parsePage: parsed page with the following results: ${JSON.stringify(postsResults)}`);
+                return postsResults;
+            });
+        }, delay);
     });
 };
 
-const parseThread = (threadUrl, startPage = 1, endPage = 1) => {
+const parseThread = (threadUrl, startPage = 1, endPage = 1, delay = 1000 * 10) => {
     console.log(`parseThread: attempting to parse thread ${threadUrl} from page ${startPage} to ${endPage}`);
 
     const allPageUrls = [];
@@ -50,7 +56,7 @@ const parseThread = (threadUrl, startPage = 1, endPage = 1) => {
 
     console.log(`parseThread: all urls are ${allPageUrls}`);
 
-    const allPageResults = allPageUrls.map(url => parsePage(url));
+    const allPageResults = allPageUrls.map(url => parsePage(url, delay));
     
     return Promise.all(allPageResults).then(allPageResults => {
         return allPageResults.reduce((allTotals, pageResults) => {
