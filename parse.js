@@ -1,7 +1,10 @@
 const request = require('request-promise-native');
 const { JSDOM } = require('jsdom');
+const { getPostAuthor, getPostLikes } = require('./reducers');
 
-const parsePost = ($post) => {
+const defaultPostReducers = [getPostAuthor, getPostLikes];
+
+const parsePost = ($post, reducers = defaultPostReducers) => {
     // authors can be 'invalid' if they are banned, which throws the structure of their post out of wack or something
     // I don't really care about those cases, so let's not bother handling it
     const isAuthorValid = !!$post.querySelector('.cAuthorPane_author a span');
@@ -9,12 +12,14 @@ const parsePost = ($post) => {
         return null;
     }
 
-    const author = $post.querySelector('.cAuthorPane_author a span').innerHTML;
+    // I feel like I'm doing this incorrectly... this looks very weird
+    // Do I need to actually use .reduce here? Should I be?
+    const result = reducers.reduce((results, reducer) => {
+        return reducer($post, results);
+    }, {});
 
-    const likes = parseInt($post.querySelector('[data-role="reactCountText"]').innerHTML || 0, 10);
-
-    console.log(`parsePost: parsed post by ${author} with ${likes} likes`);
-    return { author, likes };
+    console.log(`parsePost: parsed post by ${result.author} with ${result.likes} likes`);
+    return result;
 };
 
 const parsePage = (url, delay) => {
@@ -31,6 +36,7 @@ const parsePage = (url, delay) => {
                     .filter(postData => {
                         return !!postData && postData.likes > 0
                     })
+                    // TODO extract the logic below into a generic reducer
                     .reduce((allTotals, { author, likes }) => {
                         allTotals[author] = allTotals[author] || 0;
                         allTotals[author] += likes;
