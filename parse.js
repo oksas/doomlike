@@ -1,6 +1,12 @@
 const request = require('request-promise-native');
 const { JSDOM } = require('jsdom');
-const { getPostAuthor, getPostLikes } = require('./reducers');
+const {
+    getPostAuthor,
+    getPostLikes,
+    filterEmptyPostData,
+    filterLikelessPostData,
+    sumAuthorLikes
+    } = require('./reducers');
 
 const defaultPostReducers = [getPostAuthor, getPostLikes];
 
@@ -22,6 +28,8 @@ const parsePost = ($post, reducers = defaultPostReducers) => {
     return result;
 };
 
+const defaultPageReducers = [filterEmptyPostData, filterLikelessPostData, sumAuthorLikes];
+
 const parsePage = (url, delay) => {
     return new Promise((resolve, reject) => {
         console.log(`parsePage: waiting ${delay / 1000} seconds to make request...`);
@@ -32,20 +40,29 @@ const parsePage = (url, delay) => {
                 const { document } = (new JSDOM(body)).window;
 
                 const $posts = [...document.querySelectorAll('.cPost')];
-                const postsResults = $posts.map($post => parsePost($post))
-                    .filter(postData => {
-                        return !!postData && postData.likes > 0
-                    })
-                    // TODO extract the logic below into a generic reducer
-                    .reduce((allTotals, { author, likes }) => {
-                        allTotals[author] = allTotals[author] || 0;
-                        allTotals[author] += likes;
-                        return allTotals;
-                    }, {});
+                const postsResults = $posts.map($post => parsePost($post));
+                //     .filter(postData => {
+                //         // TODO need to extract this filter into a custom param as well
+                //         // We can't always count on caring about postData.likes, for example
+                //         // This should just be a reducer as well actually, I think...
+                //         // Reducer doesn't have to be reduce; it just has to be part of piping one
+                //         // thing to another
+                //         return !!postData && postData.likes > 0
+                //     })
+                // const pageResults = postsResults
+                //     .reduce((allTotals, { author, likes }) => {
+                //         allTotals[author] = allTotals[author] || 0;
+                //         allTotals[author] += likes;
+                //         return allTotals;
+                //     }, {});
 
-                console.log(`parsePage: parsed page with the following results: ${JSON.stringify(postsResults)}`);
-                resolve(postsResults);
-                return postsResults;
+                const pageResults = defaultPageReducers.reduce((results, reducer) => {
+                    return reducer(results);
+                }, postsResults);
+
+                console.log(`parsePage: parsed page with the following results: ${JSON.stringify(pageResults)}`);
+                resolve(pageResults);
+                return pageResults;
             });
         }, delay);
     });
