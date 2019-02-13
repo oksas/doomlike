@@ -1,16 +1,7 @@
 const request = require('request-promise-native');
 const { JSDOM } = require('jsdom');
-const {
-    getPostAuthor,
-    getPostLikes,
-    filterEmptyPostData,
-    filterLikelessPostData,
-    sumAuthorLikes
-    } = require('./reducers');
 
-const defaultPostReducers = [getPostAuthor, getPostLikes];
-
-const parsePost = ($post, reducers = defaultPostReducers) => {
+const parsePost = ($post) => {
     // authors can be 'invalid' if they are banned, which throws the structure of their post out of wack or something
     // I don't really care about those cases, so let's not bother handling it
     const isAuthorValid = !!$post.querySelector('.cAuthorPane_author a span');
@@ -18,17 +9,13 @@ const parsePost = ($post, reducers = defaultPostReducers) => {
         return null;
     }
 
-    // I feel like I'm doing this incorrectly... this looks very weird
-    // Do I need to actually use .reduce here? Should I be?
-    const result = reducers.reduce((results, reducer) => {
-        return reducer($post, results);
-    }, {});
+    const author = $post.querySelector('.cAuthorPane_author a span').innerHTML;
 
-    console.log(`parsePost: parsed post by ${result.author} with ${result.likes} likes`);
-    return result;
+    const likes = parseInt($post.querySelector('[data-role="reactCountText"]').innerHTML || 0, 10);
+
+    console.log(`parsePost: parsed post by ${author} with ${likes} likes`);
+    return { author, likes };
 };
-
-const defaultPageReducers = [filterEmptyPostData, filterLikelessPostData, sumAuthorLikes];
 
 const parsePage = (url, delay) => {
     return new Promise((resolve, reject) => {
@@ -40,29 +27,19 @@ const parsePage = (url, delay) => {
                 const { document } = (new JSDOM(body)).window;
 
                 const $posts = [...document.querySelectorAll('.cPost')];
-                const postsResults = $posts.map($post => parsePost($post));
-                //     .filter(postData => {
-                //         // TODO need to extract this filter into a custom param as well
-                //         // We can't always count on caring about postData.likes, for example
-                //         // This should just be a reducer as well actually, I think...
-                //         // Reducer doesn't have to be reduce; it just has to be part of piping one
-                //         // thing to another
-                //         return !!postData && postData.likes > 0
-                //     })
-                // const pageResults = postsResults
-                //     .reduce((allTotals, { author, likes }) => {
-                //         allTotals[author] = allTotals[author] || 0;
-                //         allTotals[author] += likes;
-                //         return allTotals;
-                //     }, {});
+                const postsResults = $posts.map($post => parsePost($post))
+                    .filter(postData => {
+                        return !!postData && postData.likes > 0
+                    })
+                    .reduce((allTotals, { author, likes }) => {
+                        allTotals[author] = allTotals[author] || 0;
+                        allTotals[author] += likes;
+                        return allTotals;
+                    }, {});
 
-                const pageResults = defaultPageReducers.reduce((results, reducer) => {
-                    return reducer(results);
-                }, postsResults);
-
-                console.log(`parsePage: parsed page with the following results: ${JSON.stringify(pageResults)}`);
-                resolve(pageResults);
-                return pageResults;
+                console.log(`parsePage: parsed page with the following results: ${JSON.stringify(postsResults)}`);
+                resolve(postsResults);
+                return postsResults;
             });
         }, delay);
     });
