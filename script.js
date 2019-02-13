@@ -2,9 +2,9 @@ const { parseThread } = require('./parse');
 const fs = require('fs');
 
 const threadUrl = 'https://www.doomworld.com/forum/topic/70830-post-your-doom-picture-part-2/';
-const startPage = 1;
-const endPage = 500;
-const delay = 1000 * 30;
+const startPage = 400;
+const endPage = 420;
+const delay = 1000 * 5;
 
 parseThread(threadUrl, startPage, endPage, delay)
 .then(results => {
