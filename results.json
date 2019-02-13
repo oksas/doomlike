@@ -1,16 +1,65 @@
 {
-    "Grazza": 4,
-    "Yuki Senmatsu": 7,
-    "Da Werecat": 1,
-    "joe-ilya": 3,
-    "mrthejoshmon": 9,
-    "Cell": 6,
-    "Tango": 1,
-    "StupidBunny": 9,
-    "Mechadon": 7,
-    "Obsidian": 1,
-    "darkreaver": 2,
-    "jmickle66666666": 1,
-    "franckFRAG": 3,
-    "Jaxxoon R": 1
+    "Grazza": {
+        "likes": 4
+    },
+    "Yuki Senmatsu": {
+        "likes": 7
+    },
+    "Da Werecat": {
+        "likes": 1
+    },
+    "joe-ilya": {
+        "likes": 5
+    },
+    "mrthejoshmon": {
+        "likes": 11
+    },
+    "Cell": {
+        "likes": 9
+    },
+    "Tango": {
+        "likes": 1
+    },
+    "StupidBunny": {
+        "likes": 9
+    },
+    "Mechadon": {
+        "likes": 7
+    },
+    "Obsidian": {
+        "likes": 1
+    },
+    "darkreaver": {
+        "likes": 2
+    },
+    "jmickle66666666": {
+        "likes": 1
+    },
+    "franckFRAG": {
+        "likes": 3
+    },
+    "Jaxxoon R": {
+        "likes": 1
+    },
+    "purist": {
+        "likes": 1
+    },
+    "WH-Wilou84": {
+        "likes": 1
+    },
+    "BaronOfStuff": {
+        "likes": 1
+    },
+    "Katamori": {
+        "likes": 1
+    },
+    "BlueFeena": {
+        "likes": 4
+    },
+    "Doomkid": {
+        "likes": 1
+    },
+    "RjY": {
+        "likes": 1
+    }
 }

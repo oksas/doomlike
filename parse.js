@@ -1,14 +1,17 @@
 const request = require('request-promise-native');
 const { JSDOM } = require('jsdom');
+const pipe = require('./pipe');
 const {
     getPostAuthor,
     getPostLikes,
+    getPostCount,
     filterEmptyPostData,
     filterLikelessPostData,
-    sumAuthorLikes
+    sumAuthorLikes,
+    sumAuthorPostCounts
     } = require('./reducers');
 
-const defaultPostReducers = [getPostAuthor, getPostLikes];
+const defaultPostReducers = [getPostAuthor, getPostLikes, getPostCount];
 
 const parsePost = ($post, reducers = defaultPostReducers) => {
     // authors can be 'invalid' if they are banned, which throws the structure of their post out of wack or something
@@ -24,11 +27,15 @@ const parsePost = ($post, reducers = defaultPostReducers) => {
         return reducer($post, results);
     }, {});
 
+    // the reason this doesn't work is that the post reducers aren't truly reducers
+    // they both expect $post as input, but don't return $post at all, so they can't really be chained
+    // const result = pipe(reducers)($post);
+
     console.log(`parsePost: parsed post by ${result.author} with ${result.likes} likes`);
     return result;
 };
 
-const defaultPageReducers = [filterEmptyPostData, filterLikelessPostData, sumAuthorLikes];
+const defaultPageReducers = [filterEmptyPostData, filterLikelessPostData, sumAuthorLikes, sumAuthorPostCounts];
 
 const parsePage = (url, delay) => {
     return new Promise((resolve, reject) => {
@@ -83,10 +90,12 @@ const parseThread = (threadUrl, startPage = 1, endPage = 1, delay = 1000 * 10) =
     const allPageResults = allPageUrls.map((url, i) => parsePage(url, delay * i));
     
     return Promise.all(allPageResults).then(allPageResults => {
+        // console.log(`ALL PAGE RESULTS:`, JSON.stringify(allPageResults));
         return allPageResults.reduce((allTotals, pageResults) => {
             for (let author in pageResults) {
-                allTotals[author] = allTotals[author] || 0;
-                allTotals[author] += pageResults[author];
+                allTotals[author] = allTotals[author] || { likes: 0 };
+                allTotals[author].likes += pageResults[author].likes;
+                allTotals[author].postCount += pageResults[author].postCount;
             }
             return allTotals;
         }, {});

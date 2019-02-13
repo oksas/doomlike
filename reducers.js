@@ -12,6 +12,13 @@ const getPostLikes = ($post, results) => {
     };
 };
 
+const getPostCount = ($post, results) => {
+    return {
+        ...results,
+        postCount: 1
+    };
+};
+
 // How do I name all of these functions so that their usage is clear?
 // IE how do I make it clear what belongs to part of the same "category" of reducers?
 // Some take postsData, some take pageData, etc. It needs to be clear what is what
@@ -46,10 +53,24 @@ const sumAuthorLikes = (postsResults) => {
     }, {});
 };
 
+// TODO By the time this function gets postsResults, it's been converted from an array into an object, so
+// it doesn't work properly
+const sumAuthorPostCounts = (postsResults) => {
+    console.log('\nSUMMING AUTHOR POST COUNTS', postsResults);
+    return postsResults.reduce((totalResults, { author, postCount }) => {
+        totalResults[author] = totalResults[author] || {};
+        totalResults[author].postCount = totalResults[author].postCount || 0;
+        totalResults[author].postCount += postCount;
+        return totalResults;
+    }, {});
+};
+
 module.exports = {
     getPostAuthor,
     getPostLikes,
+    getPostCount,
     filterEmptyPostData,
     filterLikelessPostData,
-    sumAuthorLikes
+    sumAuthorLikes,
+    sumAuthorPostCounts
 };
