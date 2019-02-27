@@ -10,11 +10,11 @@ const parsePost = ($post) => {
     }
 
     const author = $post.querySelector('.cAuthorPane_author a span').innerHTML;
-
     const likes = parseInt($post.querySelector('[data-role="reactCountText"]').innerHTML || 0, 10);
+    const permalink = $post.querySelector('[data-role^="shareComment"]').href;
 
-    console.log(`parsePost: parsed post by ${author} with ${likes} likes`);
-    return { author, likes };
+    console.log(`parsePost: parsed post by ${author} with ${likes} likes and permalink of ${permalink}`);
+    return { author, likes, permalink };
 };
 
 const parsePage = (url, delay) => {
@@ -28,12 +28,21 @@ const parsePage = (url, delay) => {
 
                 const $posts = [...document.querySelectorAll('.cPost')];
                 const postsResults = $posts.map($post => parsePost($post))
+                    // Filter out empty data for cases when the post author is invalid (see comments
+                    // inside parsePost)
                     .filter(postData => {
-                        return !!postData && postData.likes > 0
+                        return !!postData
                     })
-                    .reduce((allTotals, { author, likes }) => {
-                        allTotals[author] = allTotals[author] || 0;
-                        allTotals[author] += likes;
+                    .reduce((allTotals, { author, likes, permalink }) => {
+                        // Create an empty object for the author's data if it doesn't yet exfist
+                        allTotals[author] = allTotals[author] || {
+                            author,
+                            totalLikes: 0,
+                            posts: []
+                        };
+
+                        allTotals[author].totalLikes += likes;
+                        allTotals[author].posts.push({ likes, permalink });
                         return allTotals;
                     }, {});
 
@@ -62,8 +71,16 @@ const parseThread = (threadUrl, startPage = 1, endPage = 1, delay = 1000 * 10) =
     return Promise.all(allPageResults).then(allPageResults => {
         return allPageResults.reduce((allTotals, pageResults) => {
             for (let author in pageResults) {
-                allTotals[author] = allTotals[author] || 0;
-                allTotals[author] += pageResults[author];
+                const currentAuthorPageResults = pageResults[author];
+
+                allTotals[author] = allTotals[author] || {
+                    author,
+                    totalLikes: 0,
+                    posts: []
+                };
+
+                allTotals[author].totalLikes += currentAuthorPageResults.totalLikes;
+                allTotals[author].posts = allTotals[author].posts.concat(currentAuthorPageResults.posts);
             }
             return allTotals;
         }, {});
